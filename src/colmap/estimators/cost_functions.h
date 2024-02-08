@@ -449,6 +449,72 @@ struct MetricRelativePoseErrorCostFunction {
   const EigenMatrix6d sqrt_information_j_;
 };
 
+struct ScaledDepthErrorCostFunction {
+ public:
+  ScaledDepthErrorCostFunction(const double depth) : depth_(depth) {}
+
+  static ceres::CostFunction* Create(const double depth) {
+    return (
+        new ceres::
+            AutoDiffCostFunction<ScaledDepthErrorCostFunction, 1, 4, 3, 3, 2>(
+                new ScaledDepthErrorCostFunction(depth)));
+  }
+
+  template <typename T>
+  bool operator()(const T* const cam_from_world_rotation,
+                  const T* const cam_from_world_translation,
+                  const T* const point3D,
+                  const T* const shift_scale,
+                  T* residuals) const {
+    *residuals = (EigenQuaternionMap<T>(cam_from_world_rotation) *
+                  EigenVector3Map<T>(point3D))[2] +
+                 cam_from_world_translation[2] - shift_scale[0] -
+                 T(depth_) * shift_scale[1];
+    return true;
+  }
+
+ private:
+  const double depth_;
+};
+
+struct ScaledDepthErrorConstantPoseCostFunction
+    : public ScaledDepthErrorCostFunction {
+  using Parent = ScaledDepthErrorCostFunction;
+
+ public:
+  ScaledDepthErrorConstantPoseCostFunction(const Rigid3d& cam_from_world,
+                                           const double depth)
+      : Parent(depth), cam_from_world_(cam_from_world) {}
+
+  static ceres::CostFunction* Create(const Rigid3d& cam_from_world,
+                                     const double depth) {
+    return (new ceres::AutoDiffCostFunction<
+            ScaledDepthErrorConstantPoseCostFunction,
+            1,
+            3,
+            2>(
+        new ScaledDepthErrorConstantPoseCostFunction(cam_from_world, depth)));
+  }
+
+  template <typename T>
+  bool operator()(const T* const point3D,
+                  const T* const shift_scale,
+                  T* residuals) const {
+    const Eigen::Quaternion<T> cam_from_world_rotation =
+        cam_from_world_.rotation.cast<T>();
+    const Eigen::Matrix<T, 3, 1> cam_from_world_translation =
+        cam_from_world_.translation.cast<T>();
+    return Parent::operator()(cam_from_world_rotation.coeffs().data(),
+                              cam_from_world_translation.data(),
+                              point3D,
+                              shift_scale,
+                              residuals);
+  }
+
+ private:
+  const Rigid3d& cam_from_world_;
+};
+
 // A cost function that wraps another one and whiten its residuals with an
 // isotropic covariance, i.e. assuming that the variance is identical in and
 // independent between each dimension of the residual.

@@ -121,4 +121,11 @@ void BindCostFunctions(py::module& m_parent) {
         &MetricRelativePoseErrorCostFunction::Create,
         "i_from_j"_a,
         "covariance_j"_a);
+
+  m.def(
+      "ScaledDepthErrorCost", &ScaledDepthErrorCostFunction::Create, "depth"_a);
+  m.def("ScaledDepthErrorCost",
+        &ScaledDepthErrorConstantPoseCostFunction::Create,
+        "cam_from_world"_a,
+        "depth"_a);
 }
