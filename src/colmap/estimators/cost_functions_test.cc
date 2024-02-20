@@ -367,7 +367,7 @@ TEST(ScaledDepthError, Nominal) {
   double cam_from_world_rotation[4] = {0, 0, 0, 1};
   double cam_from_world_translation[3] = {0, 0, 0};
   double point3D[3] = {0, 0, 3};
-  double shift_scale[2] = {0, 1};
+  double shift_scale[2] = {0, 0};
   double residuals[1];
   const double* parameters[4] = {cam_from_world_rotation,
                                  cam_from_world_translation,
@@ -389,7 +389,7 @@ TEST(ScaledDepthError, Nominal) {
   EXPECT_TRUE(cost_function->Evaluate(parameters, residuals, nullptr));
   EXPECT_EQ(residuals[0], 2);
 
-  shift_scale[1] = 2;
+  shift_scale[1] = std::log(2);
   EXPECT_TRUE(cost_function->Evaluate(parameters, residuals, nullptr));
   EXPECT_EQ(residuals[0], 0);
 

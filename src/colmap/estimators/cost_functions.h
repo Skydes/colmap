@@ -469,7 +469,7 @@ struct ScaledDepthErrorCostFunction {
     *residuals = (EigenQuaternionMap<T>(cam_from_world_rotation) *
                   EigenVector3Map<T>(point3D))[2] +
                  cam_from_world_translation[2] - shift_scale[0] -
-                 T(depth_) * shift_scale[1];
+                 T(depth_) * exp(shift_scale[1]);
     return true;
   }
 
